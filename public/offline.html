@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#1e40af" />
+  <title>Offline - Deepa Inventory</title>
+  <link rel="manifest" href="/manifest.json" />
+  <style>
+    :root {
+      --bg-primary: #0a0f1a;
+      --bg-secondary: #111827;
+      --surface: #111827;
+      --text-primary: #f1f5f9;
+      --text-secondary: #cbd5e1;
+      --text-tertiary: #94a3b8;
+      --brand-500: #3b82f6;
+      --brand-600: #2563eb;
+      --radius-lg: 0.5rem;
+      --radius-xl: 0.75rem;
+      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4);
+      --space-4: 1rem;
+      --space-6: 1.5rem;
+      --space-8: 2rem;
+      --space-12: 3rem;
+      --text-xl: 1.25rem;
+      --text-2xl: 1.5rem;
+      --text-4xl: 2.25rem;
+      --leading-tight: 1.1;
+    }
+    @media (prefers-color-scheme: light) {
+      :root {
+        --bg-primary: #f8fafc;
+        --bg-secondary: #ffffff;
+        --surface: #ffffff;
+        --text-primary: #0a0f1a;
+        --text-secondary: #334155;
+        --text-tertiary: #64748b;
+        --brand-500: #3b82f6;
+        --brand-600: #2563eb;
+      }
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: var(--space-4);
+      min-height: 100vh;
+      min-height: 100dvh;
+    }
+    .offline-container {
+      text-align: center;
+      max-width: 28rem;
+      padding: var(--space-8);
+      background: var(--surface);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow-lg);
+    }
+    .offline-icon {
+      width: 5rem;
+      height: 5rem;
+      margin: 0 auto var(--space-6);
+      color: var(--text-tertiary);
+    }
+    .offline-title {
+      font-size: var(--text-2xl);
+      font-weight: 700;
+      line-height: var(--leading-tight);
+      margin-bottom: var(--space-4);
+    }
+    .offline-message {
+      color: var(--text-secondary);
+      font-size: var(--text-xl);
+      line-height: 1.6;
+      margin-bottom: var(--space-8);
+    }
+    .retry-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1.5rem;
+      background: var(--brand-600);
+      color: white;
+      border: none;
+      border-radius: var(--radius-lg);
+      font-size: var(--text-xl);
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .retry-btn:hover { background: var(--brand-500); }
+    .retry-btn:focus-visible {
+      outline: 2px solid var(--brand-500);
+      outline-offset: 2px;
+    }
+    .offline-details {
+      margin-top: var(--space-8);
+      padding-top: var(--space-6);
+      border-top: 1px solid var(--bg-secondary);
+      font-size: 0.875rem;
+      color: var(--text-tertiary);
+    }
+  </style>
+</head>
+<body>
+  <div class="offline-container">
+    <svg class="offline-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M1 1l22 22" />
+      <path d="M16.72 11.06A10.94 10.94 0 0 1 12 18.75a10.94 10.94 0 0 1-4.72-7.69" />
+      <line x1="12" y1="20" x2="12.01" y2="20" />
+    </svg>
+    <h1 class="offline-title">You're Offline</h1>
+    <p class="offline-message">Deepa Inventory needs an internet connection to sync data. Your recent changes are saved locally and will sync when you're back online.</p>
+    <button class="retry-btn" onclick="window.location.reload()">
+      <svg width="20" height="20" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M23 4v6h-6" />
+        <path d="M1 20v-6h6" />
+        <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+      </svg>
+      Try Again
+    </button>
+    <div class="offline-details">
+      <p>Your inventory counts and movements are stored locally.</p>
+      <p>Data will automatically sync when connection is restored.</p>
+    </div>
+  </div>
+  <script>
+    // Auto-retry when online
+    window.addEventListener('online', () => {
+      window.location.reload();
+    });
+    
+    // Periodic retry
+    let retryCount = 0;
+    const maxRetries = 5;
+    const retryInterval = setInterval(() => {
+      if (navigator.onLine) {
+        clearInterval(retryInterval);
+        window.location.reload();
+      } else if (retryCount >= maxRetries) {
+        clearInterval(retryInterval);
+      }
+      retryCount++;
+    }, 30000);
+  </script>
+</body>
+</html>
