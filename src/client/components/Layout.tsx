@@ -1,15 +1,18 @@
 import { Outlet, useLocation } from 'react-router-dom';
 import { TopAppBar } from './ui/TopAppBar';
 import { BottomNav, useBottomNavItems } from './ui/BottomNav';
+import { MobileNavigationDrawer, MobileNavigationTrigger } from './ui/MobileNavigationDrawer';
 import { ToastProvider } from './ui/Toast';
 import { ConnectionStatus } from './ui/ConnectionStatus';
 import { ThemeProvider, useTheme } from '../context/ThemeContext';
 import { useAuth } from '../hooks/useAuth';
+import { useState } from 'react';
 
 function InnerLayout() {
   const location = useLocation();
   const { user } = useAuth();
   const navItems = useBottomNavItems(user?.role || null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   // Pages that don't need the top app bar
   const noHeaderPages = ['/login'];
@@ -21,7 +24,7 @@ function InnerLayout() {
 
   return (
     <div className="app-layout" style={{
-      minHeight: '100vh, 100dvh',
+      minHeight: '100dvh',
       display: 'flex',
       flexDirection: 'column',
       background: 'var(--bg-primary)'
@@ -30,6 +33,12 @@ function InnerLayout() {
         <TopAppBar
           title={getPageTitle(location.pathname)}
           showSearch={shouldShowSearch(location.pathname)}
+          actions={
+            <MobileNavigationTrigger 
+              onClick={() => setDrawerOpen(true)} 
+              userRole={user?.role || null} 
+            />
+          }
         />
       )}
 
@@ -47,11 +56,13 @@ function InnerLayout() {
         <Outlet />
       </main>
 
-      {showBottomNav && <BottomNav items={navItems.filter(item => {
-        if (item.adminOnly && user?.role !== 'admin') return false;
-        return true;
-      })} />}
+      {showBottomNav && <BottomNav items={navItems} userRole={user?.role || null} />}
       <ConnectionStatus showWhenOnline={false} />
+      <MobileNavigationDrawer 
+        isOpen={drawerOpen} 
+        onClose={() => setDrawerOpen(false)} 
+        userRole={user?.role || null} 
+      />
     </div>
   );
 }

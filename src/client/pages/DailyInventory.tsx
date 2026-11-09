@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { api, DayResponse, Row, Movement, MovementsResponse } from '../api';
 import { ProductCard, ProductGrid, Dialog, Button, formatNumber, getStockStatus } from '../components/ui';
 import { useToastContext } from '../components/ui/Toast';
+import { useAuth } from '../hooks/useAuth';
 
 const today = () => new Date().toISOString().slice(0, 10);
 
@@ -22,6 +23,8 @@ export function DailyInventory() {
     type?: Movement['type'];
   }>({ open: false });
   const { success, error: showError } = useToastContext();
+const { user } = useAuth();
+const canManage = user?.role === 'admin' || user?.role === 'manager';
 
   const load = useCallback(async () => {
     setError(null);
@@ -94,7 +97,7 @@ export function DailyInventory() {
   );
 
   const productMovements = (productId: string) =>
-    movements.filter(m => m.productId === productId);
+    movements.filter(m => m.productId === productId) as Movement[];
 
   const getSaveStatusIndicator = (productId: string) => {
     const status = saveStatus[productId];
@@ -211,15 +214,14 @@ export function DailyInventory() {
               paddingBottom: 'var(--space-1)',
               scrollbarWidth: 'none'
             }}>
-              <button
+<button
                 className={`category-chip ${selectedCategory === 'all' ? 'category-chip--active' : ''}`}
                 onClick={() => setSelectedCategory('all')}
-                style={{ 
-                  '--chip-color': 'var(--brand-500)',
+                style={{
                   background: selectedCategory === 'all' ? 'var(--brand-600)' : 'var(--surface-elevated)',
                   color: selectedCategory === 'all' ? 'var(--text-on-brand)' : 'var(--text-secondary)',
-                  borderColor: selectedCategory === 'all' ? 'var(--brand-600)' : 'var(--border-default)'
-                }}
+                  borderColor: selectedCategory === 'all' ? 'var(--brand-600)' : 'var(--border-default)',
+                } as React.CSSProperties & { '--chipColor'?: string }}
               >
                 All
                 <span className="category-chip__count">{rows.length}</span>
@@ -229,12 +231,11 @@ export function DailyInventory() {
                   key={cat}
                   className={`category-chip ${selectedCategory === cat ? 'category-chip--active' : ''}`}
                   onClick={() => setSelectedCategory(cat)}
-                  style={{ 
-                    '--chip-color': `var(--cat-${cat})`,
+                  style={{
                     background: selectedCategory === cat ? `var(--cat-${cat})` : 'var(--surface-elevated)',
                     color: selectedCategory === cat ? 'var(--text-on-brand)' : 'var(--text-secondary)',
-                    borderColor: selectedCategory === cat ? `var(--cat-${cat})` : 'var(--border-default)'
-                  }}
+                    borderColor: selectedCategory === cat ? `var(--cat-${cat})` : 'var(--border-default)',
+                  } as React.CSSProperties & { '--chipColor'?: string }}
                 >
                   {cat.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
                   <span className="category-chip__count">
@@ -255,9 +256,9 @@ export function DailyInventory() {
               const transfersOut = pm.filter(m => m.type === 'transfer_out').reduce((s, m) => s + m.amount, 0);
               const receipts = pm.filter(m => m.type === 'receipt').reduce((s, m) => s + m.amount, 0);
               const consumption = pm.filter(m => m.type === 'consumption').reduce((s, m) => s + m.amount, 0);
-              const isLiquor = r.unit === 'ml' && r.bottleSizeMl;
-              const stockQty = r.physicalCount ?? r.expectedClosing;
-              const status = getStockStatus(stockQty, r.reorderLevel, isLiquor);
+              const isLiquor = !!(r.unit === 'ml' && r.bottleSizeMl);
+              const stockQty = r.physicalCount ?? r.expectedClosing ?? 0;
+              const status = getStockStatus(stockQty, r.reorderLevel ?? 0, isLiquor);
               
               return {
                 id: r.productId,
@@ -272,9 +273,9 @@ export function DailyInventory() {
                 physicalQuantity: r.physicalCount,
                 expectedQuantity: r.expectedClosing,
                 variance: r.variance,
-                status,
-                isLiquor,
-                onQuantityChange: (id, qty) => onSave(r, qty.toString()),
+                status: status as 'in-stock' | 'low-stock' | 'critical-stock' | 'out-of-stock' | 'pending' | 'normal',
+                isLiquor: Boolean(isLiquor),
+                onQuantityChange: (id: string, qty: number) => onSave(r, qty.toString()),
               };
             })}
             loading={!day}
@@ -345,18 +346,22 @@ export function DailyInventory() {
                           {r.variance == null ? '—' : variance > 0 ? '+' + variance : variance}
                         </td>
                         <td className="actions">
-                          <Button variant="ghost" size="sm" onClick={() => openMovementDialog(r, 'spillage')} disabled={busy} aria-label={`Record spillage for ${r.productName}`}>
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="16" height="16" aria-hidden="true">
-                              <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z" />
-                            </svg>
-                            Spill
-                          </Button>
-                          <Button variant="ghost" size="sm" onClick={() => openMovementDialog(r, 'adjustment')} disabled={busy} aria-label={`Record adjustment for ${r.productName}`}>
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="16" height="16" aria-hidden="true">
-                              <line x1="5" y1="12" x2="19" y2="12" />
-                            </svg>
-                            Adj
-                          </Button>
+                          {canManage && (
+                            <>
+                              <Button variant="ghost" size="sm" onClick={() => openMovementDialog(r, 'spillage')} disabled={busy} aria-label={`Record spillage for ${r.productName}`}>
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="16" height="16" aria-hidden="true">
+                                  <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z" />
+                                </svg>
+                                Spill
+                              </Button>
+                              <Button variant="ghost" size="sm" onClick={() => openMovementDialog(r, 'adjustment')} disabled={busy} aria-label={`Record adjustment for ${r.productName}`}>
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="16" height="16" aria-hidden="true">
+                                  <line x1="5" y1="12" x2="19" y2="12" />
+                                </svg>
+                                Adj
+                              </Button>
+                            </>
+                          )}
                         </td>
                       </tr>
                     );
@@ -376,7 +381,7 @@ export function DailyInventory() {
         </>
       )}
 
-      {showMovementDialog.open && showMovementDialog.product && (
+      {canManage && showMovementDialog.open && showMovementDialog.product && (
         <MovementDialog
           product={showMovementDialog.product}
           type={showMovementDialog.type!}

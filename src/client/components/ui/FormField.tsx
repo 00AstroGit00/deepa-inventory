@@ -5,7 +5,7 @@ export interface FormFieldProps {
   required?: boolean;
   helpText?: string;
   error?: string;
-  children: React.ReactNode;
+  children: React.ReactNode | ((ctx: { errorId: string; helpId: string }) => React.ReactNode);
   className?: string;
 }
 
@@ -23,7 +23,7 @@ export function FormField({ label, required, helpText, error, children, classNam
       )}
       <div>
         {typeof children === 'function' 
-          ? children({ errorId, helpId }) 
+          ? children({ errorId: errorId || '', helpId: helpId || '' }) 
           : children
         }
       </div>
@@ -77,54 +77,54 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
     const hasLeftElement = leftIcon || leftElement;
     const hasRightElement = rightIcon || rightElement;
 
-    return (
-      <FormField label={label} required={required} helpText={!error ? helpText : undefined} error={error}>
-        {({ errorId: ctxErrorId, helpId: ctxHelpId }: { errorId: string; helpId: string }) => (
-          <div className="form-input-wrapper" style={{ position: 'relative', display: 'flex', alignItems: 'center' }}> 
-            {hasLeftElement && (
-              <div className="form-input__left" style={{ 
-                position: 'absolute', 
-                left: 'var(--input-px)', 
-                display: 'flex', 
-                alignItems: 'center', 
-                color: 'var(--text-tertiary)',
-                pointerEvents: 'none',
-                zIndex: 1
-              }}>
-                {leftElement || leftIcon}
-              </div>
-            )}
-            <input
-              ref={ref}
-              id={inputId}
-              className={`form-input ${error ? 'form-input--error' : ''} ${className}`}
-              aria-invalid={error ? 'true' : 'false'}
-              aria-describedby={error ? ctxErrorId : helpText ? ctxHelpId : undefined}
-              style={{
-                paddingLeft: hasLeftElement ? 'calc(var(--input-px) + 1.5rem + var(--inline-gap))' : 'var(--input-px)',
-                paddingRight: hasRightElement ? 'calc(var(--input-px) + 1.5rem + var(--inline-gap))' : 'var(--input-px)',
-                ...style,
-              }}
-              {...props}
-            />
-            {hasRightElement && (
-              <div className="form-input__right" style={{ 
-                position: 'absolute', 
-                right: 'var(--input-px)', 
-                display: 'flex', 
-                alignItems: 'center', 
-                color: 'var(--text-tertiary)',
-                pointerEvents: 'none',
-                zIndex: 1
-              }}>
-                {rightElement || rightIcon}
-              </div>
-            )}
-          </div>
-        )}
-      </FormField>
-    );
-  }
+  return (
+    <FormField label={label} required={required} helpText={!error ? helpText : undefined} error={error}>
+      {({ errorId: ctxErrorId, helpId: ctxHelpId }: { errorId: string; helpId: string }) => (
+        <div className="form-input-wrapper" style={{ position: 'relative', display: 'flex', alignItems: 'center' }}> 
+          {hasLeftElement && (
+            <div className="form-input__left" style={{ 
+              position: 'absolute', 
+              left: 'var(--input-px)', 
+              display: 'flex', 
+              alignItems: 'center', 
+              color: 'var(--text-tertiary)',
+              pointerEvents: 'none',
+              zIndex: 1
+            }}>
+              {leftElement || leftIcon}
+            </div>
+          )}
+          <input
+            ref={ref}
+            id={inputId}
+            className={`form-input ${error ? 'form-input--error' : ''} ${className}`}
+            aria-invalid={error ? 'true' : 'false'}
+            aria-describedby={error ? ctxErrorId : helpText ? ctxHelpId : undefined}
+            style={{
+              paddingLeft: hasLeftElement ? 'calc(var(--input-px) + 1.5rem + var(--inline-gap))' : 'var(--input-px)',
+              paddingRight: hasRightElement ? 'calc(var(--input-px) + 1.5rem + var(--inline-gap))' : 'var(--input-px)',
+              ...style,
+            }}
+            {...props}
+          />
+          {hasRightElement && (
+            <div className="form-input__right" style={{ 
+              position: 'absolute', 
+              right: 'var(--input-px)', 
+              display: 'flex', 
+              alignItems: 'center', 
+              color: 'var(--text-tertiary)',
+              pointerEvents: 'none',
+              zIndex: 1
+            }}>
+              {rightElement || rightIcon}
+            </div>
+          )}
+        </div>
+      )}
+    </FormField>
+  );
+}
 );
 
 Input.displayName = 'Input';

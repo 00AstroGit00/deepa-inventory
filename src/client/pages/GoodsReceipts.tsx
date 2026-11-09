@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { api } from '../api';
 import { Dialog, Button, Input, Select, Textarea, formatNumber, KPICard } from '../components/ui';
 import { useToastContext } from '../components/ui/Toast';
+import { useAuth } from '../hooks/useAuth';
 
 interface GoodsReceipt {
   id: string;
@@ -61,6 +62,8 @@ export function GoodsReceipts() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const { success, error: showError } = useToastContext();
+  const { user } = useAuth();
+  const canManage = user?.role === 'admin' || user?.role === 'manager';
 
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState<{
@@ -190,15 +193,17 @@ export function GoodsReceipts() {
           <p className="page-subtitle">Record received goods against purchase orders</p>
         </div>
         <div className="page-actions" style={{ display: 'flex', gap: 'var(--inline-gap)', flexWrap: 'wrap' }}>
-          <Button variant="primary" onClick={() => { resetForm(); setShowForm(true); }} leftIcon={
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" width="18" height="18" aria-hidden="true">
-              <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
-              <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
-              <line x1="12" y1="22.08" x2="12" y2="12" />
-            </svg>
-          }>
-            New Receipt
-          </Button>
+          {canManage && (
+            <Button variant="primary" onClick={() => { resetForm(); setShowForm(true); }} leftIcon={
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" width="18" height="18" aria-hidden="true">
+                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+                <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
+                <line x1="12" y1="22.08" x2="12" y2="12" />
+              </svg>
+            }>
+              New Receipt
+            </Button>
+          )}
         </div>
       </div>
 
@@ -288,7 +293,7 @@ export function GoodsReceipts() {
       </div>
 
       {/* GR Form Dialog */}
-      {showForm && (
+      {canManage && showForm && (
         <Dialog
           isOpen={true}
           onClose={resetForm}

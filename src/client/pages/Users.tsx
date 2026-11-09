@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { api } from '../api';
 import { Dialog, Button, Input, Select, Textarea, formatNumber, KPICard } from '../components/ui';
 import { useToastContext } from '../components/ui/Toast';
+import { useAuth } from '../hooks/useAuth';
 
 interface User {
   id: string;
@@ -13,12 +14,14 @@ interface User {
 
 export function Users() {
   const [list, setList] = useState<User[]>([]);
-  const [form, setForm] = useState({ email: '', password: '', role: 'counter' as const });
+  const [form, setForm] = useState({ email: '', password: '', role: 'counter' as 'admin' | 'manager' | 'counter' });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<{ id: string; email: string } | null>(null);
   const { success, error: showError } = useToastContext();
+const { user } = useAuth();
+const canManage = user?.role === 'admin';
 
   const load = useCallback(async () => {
     try {
@@ -49,7 +52,7 @@ export function Users() {
     setBusy(true);
     try {
       const payload = { email: form.email, role: form.role, ...(form.password ? { password: form.password } : {}) };
-      const url = editingId ? `/api/users/${editingId}` : '/api/users';
+      const url = editingId ? `/api/user/${editingId}` : '/api/users';
       const method = editingId ? 'PATCH' : 'POST';
       const res = await fetch(url, { method, credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
       if (!res.ok) { const body = await res.json().catch(() => ({ error: res.statusText })); throw new Error(body.error ?? `HTTP ${res.status}`); }
@@ -106,16 +109,18 @@ export function Users() {
           <p className="page-subtitle">Manage system users and permissions</p>
         </div>
         <div className="page-actions" style={{ display: 'flex', gap: 'var(--inline-gap)', flexWrap: 'wrap' }}>
-          <Button variant="primary" onClick={() => { resetForm(); }} leftIcon={
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" width="18" height="18" aria-hidden="true">
-              <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-              <circle cx="8.5" cy="7" r="4" />
-              <line x1="20" y1="8" x2="20" y2="14" />
-              <line x1="23" y1="11" x2="17" y2="11" />
-            </svg>
-          }>
-            Add User
-          </Button>
+          {canManage && (
+            <Button variant="primary" onClick={() => { resetForm(); }} leftIcon={
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" width="18" height="18" aria-hidden="true">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                <circle cx="8.5" cy="7" r="4" />
+                <line x1="20" y1="8" x2="20" y2="14" />
+                <line x1="23" y1="11" x2="17" y2="11" />
+              </svg>
+            }>
+              Add User
+            </Button>
+          )}
         </div>
       </div>
 
@@ -133,7 +138,8 @@ export function Users() {
       )}
 
       {/* Create/Edit User Form */}
-      <div className="card" style={{ marginBottom: 'var(--space-4)' }}>
+      {canManage && (
+        <div className="card" style={{ marginBottom: 'var(--space-4)' }}>
         <div style={{ 
           display: 'flex', 
           alignItems: 'center', 
@@ -188,7 +194,8 @@ export function Users() {
             </Button>
           </div>
         </form>
-      </div>
+        </div>
+      )}
 
       {/* User List */}
       <div className="card">
@@ -239,13 +246,17 @@ export function Users() {
                   <td style={{ padding: 'var(--space-3) var(--space-4)', fontFamily: 'var(--font-mono)', fontSize: 'var(--text-sm)' }}>
                     {new Date(u.created_at).toLocaleDateString()}
                   </td>
-                  <td style={{ padding: 'var(--space-3) var(--space-4)' }}>
-                    <div style={{ display: 'flex', gap: 'var(--inline-gap)' }}>
-                      <Button variant="ghost" size="sm" onClick={() => startEdit(u)} disabled={busy} aria-label={`Edit ${u.email}`}>Edit</Button>
-                      <Button variant="ghost" size="sm" onClick={() => handleToggleActive(u.id, u.is_active)} disabled={busy} aria-label={`Deactivate ${u.email}`}>Deactivate</Button>
-                      <Button variant="danger" size="sm" onClick={() => confirmDelete(u.id, u.email)} disabled={busy} aria-label={`Delete ${u.email}`}>Delete</Button>
-                    </div>
-                  </td>
+<td style={{ padding: 'var(--space-3) var(--space-4)' }}>
+                      <div style={{ display: 'flex', gap: 'var(--inline-gap)' }}>
+                        {canManage && (
+                          <>
+                            <Button variant="ghost" size="sm" onClick={() => startEdit(u)} disabled={busy} aria-label={`Edit ${u.email}`}>Edit</Button>
+                            <Button variant="ghost" size="sm" onClick={() => handleToggleActive(u.id, u.is_active)} disabled={busy} aria-label={`Deactivate ${u.email}`}>Deactivate</Button>
+                            <Button variant="danger" size="sm" onClick={() => confirmDelete(u.id, u.email)} disabled={busy} aria-label={`Delete ${u.email}`}>Delete</Button>
+                          </>
+                        )}
+                      </div>
+                    </td>
                 </tr>
               ))}
               {inactiveUsers.map(u => (
@@ -268,12 +279,16 @@ export function Users() {
                   <td style={{ padding: 'var(--space-3) var(--space-4)', fontFamily: 'var(--font-mono)', fontSize: 'var(--text-sm)' }}>
                     {new Date(u.created_at).toLocaleDateString()}
                   </td>
-                  <td style={{ padding: 'var(--space-3) var(--space-4)' }}>
-                    <div style={{ display: 'flex', gap: 'var(--inline-gap)' }}>
-                      <Button variant="ghost" size="sm" onClick={() => startEdit(u)} disabled={busy} aria-label={`Edit ${u.email}`}>Edit</Button>
-                      <Button variant="ghost" size="sm" onClick={() => handleToggleActive(u.id, u.is_active)} disabled={busy} aria-label={`Activate ${u.email}`}>Activate</Button>
-                    </div>
-                  </td>
+<td style={{ padding: 'var(--space-3) var(--space-4)' }}>
+                      <div style={{ display: 'flex', gap: 'var(--inline-gap)' }}>
+                        {canManage && (
+                          <>
+                            <Button variant="ghost" size="sm" onClick={() => startEdit(u)} disabled={busy} aria-label={`Edit ${u.email}`}>Edit</Button>
+                            <Button variant="ghost" size="sm" onClick={() => handleToggleActive(u.id, u.is_active)} disabled={busy} aria-label={`Activate ${u.email}`}>Activate</Button>
+                          </>
+                        )}
+                      </div>
+                    </td>
                 </tr>
               ))}
               {list.length === 0 && (
@@ -290,7 +305,7 @@ export function Users() {
       </div>
 
       {/* Delete Confirmation Dialog */}
-      {showDeleteConfirm && (
+      {canManage && showDeleteConfirm && (
         <Dialog
           isOpen={true}
           onClose={() => setShowDeleteConfirm(null)}

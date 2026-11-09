@@ -3,12 +3,13 @@ import { api } from '../api';
 import { BarcodeScanner, KeyboardScanner } from '../components/BarcodeScanner';
 import { ProductCard, ProductGrid, Dialog, Button, Input, Select, Textarea, Checkbox, formatNumber } from '../components/ui';
 import { useToastContext } from '../components/ui/Toast';
+import { useAuth } from '../hooks/useAuth';
 
 const EMPTY = {
   name: '', brand: '', category: 'beer', stock_unit: 'bottle',
   package_size_amount: '', package_size_unit: 'ml', bottle_size_ml: '',
   tax_treatment: 'outside_gst_excise_vat', reorder_level: '',
-  sku: '', barcode: '', is_active: true,
+  sku: '', barcode: '', active: 'true',
 };
 
 interface Product {
@@ -24,7 +25,7 @@ interface Product {
   bottle_size_ml: number | null;
   tax_treatment: string;
   reorder_level: number | null;
-  is_active: boolean;
+  active: boolean;
 }
 
 const CATEGORIES = ['liquor', 'beer', 'soda', 'club_soda', 'water', 'other'] as const;
@@ -51,10 +52,25 @@ const categoryColors: Record<string, string> = {
   other: 'var(--cat-other)',
 };
 
+interface FormState {
+  name: string;
+  brand: string;
+  category: string;
+  stock_unit: string;
+  package_size_amount: string;
+  package_size_unit: string;
+  bottle_size_ml: string;
+  tax_treatment: string;
+  reorder_level: string;
+  sku: string;
+  barcode: string;
+  active: string;
+}
+
 export function Products() {
   const [list, setList] = useState<Product[]>([]);
   const [q, setQ] = useState('');
-  const [form, setForm] = useState<Record<string, string>>({ ...EMPTY });
+  const [form, setForm] = useState<FormState>({ ...EMPTY });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -62,6 +78,8 @@ export function Products() {
   const [showForm, setShowForm] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<{ id: string; name: string } | null>(null);
   const { success, error: showError } = useToastContext();
+  const { user } = useAuth();
+  const canManage = user?.role === 'admin' || user?.role === 'manager';
 
   const load = useCallback(() => api.products(q).then(setList).catch(e => setError(e.message)), [q]);
   useEffect(() => { void load(); }, [load]);
@@ -87,7 +105,7 @@ export function Products() {
       reorder_level: p.reorder_level?.toString() ?? '',
       sku: p.sku ?? '',
       barcode: p.barcode ?? '',
-      is_active: p.is_active.toString(),
+      active: p.active.toString(),
     });
     setEditingId(p.id);
     setShowForm(true);
@@ -117,14 +135,14 @@ export function Products() {
         package_size_amount: form.package_size_amount ? Number(form.package_size_amount) : null,
         bottle_size_ml: form.bottle_size_ml ? Number(form.bottle_size_ml) : null,
         reorder_level: form.reorder_level ? Number(form.reorder_level) : null,
-        is_active: form.is_active === 'true',
+        active: form.active === 'true',
       };
       if (editingId) {
         await api.updateProduct(editingId, payload);
-        success('Product updated', payload.name);
+        success('Product updated', form.name as string);
       } else {
         await api.createProduct(payload);
-        success('Product created', payload.name);
+        success('Product created', form.name as string);
       }
       resetForm();
       await load();
@@ -141,7 +159,7 @@ export function Products() {
     setBusy(true);
     setError(null);
     try {
-      await api.updateProduct(showDeleteConfirm.id, { is_active: false });
+      await api.updateProduct(showDeleteConfirm.id, { active: false });
       success('Product deactivated', showDeleteConfirm.name);
       await load();
     } catch (err) { setError((err as Error).message); }
@@ -153,8 +171,8 @@ export function Products() {
 
   const isLiquor = form.category === 'liquor';
 
-  const activeProducts = list.filter(p => p.is_active);
-  const inactiveProducts = list.filter(p => !p.is_active);
+  const activeProducts = list.filter((p): p is Product => p.active);
+  const inactiveProducts = list.filter(p => !p.active);
 
   // Convert to ProductCard format for grid view
   const gridProducts = list.map(p => ({
@@ -167,7 +185,7 @@ export function Products() {
     packageSizeUnit: p.package_size_unit,
     bottleSizeMl: p.bottle_size_ml,
     stockQuantity: 0, // Not shown in product management
-    status: p.is_active ? 'in-stock' : 'out-of-stock' as const,
+    status: p.active ? 'in-stock' : 'out-of-stock' as 'in-stock' | 'low-stock' | 'critical-stock' | 'out-of-stock' | 'pending' | 'normal',
     isLiquor: p.category === 'liquor',
   }));
 
@@ -184,14 +202,16 @@ export function Products() {
           <p className="page-subtitle">Manage inventory products and catalog</p>
         </div>
         <div className="page-actions" style={{ display: 'flex', gap: 'var(--inline-gap)', flexWrap: 'wrap' }}>
-          <Button variant="primary" onClick={() => { resetForm(); setShowForm(true); }} leftIcon={
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" width="18" height="18" aria-hidden="true">
-              <line x1="12" y1="5" x2="12" y2="19" />
-              <line x1="5" y1="12" x2="19" y2="12" />
-            </svg>
-          }>
-            Add Product
-          </Button>
+          {canManage && (
+            <Button variant="primary" onClick={() => { resetForm(); setShowForm(true); }} leftIcon={
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" width="18" height="18" aria-hidden="true">
+                <line x1="12" y1="5" x2="12" y2="19" />
+                <line x1="5" y1="12" x2="19" y2="12" />
+              </svg>
+            }>
+              Add Product
+            </Button>
+          )}
           <Button variant="secondary" onClick={() => { setQ(''); }} leftIcon={
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="18" height="18" aria-hidden="true">
               <line x1="18" y1="6" x2="6" y2="18" />
@@ -313,8 +333,12 @@ export function Products() {
                     <td className="num">{p.reorder_level ?? '—'}</td>
                     <td><span className="badge badge--success">Active</span></td>
                     <td className="actions" style={{ display: 'flex', gap: 'var(--inline-gap)' }}>
-                      <Button variant="ghost" size="sm" onClick={() => startEdit(p)} disabled={busy} aria-label={`Edit ${p.name}`}>Edit</Button>
-                      <Button variant="danger" size="sm" onClick={() => confirmDelete(p.id, p.name)} disabled={busy} aria-label={`Deactivate ${p.name}`}>Deactivate</Button>
+                      {canManage && (
+                        <>
+                          <Button variant="ghost" size="sm" onClick={() => startEdit(p)} disabled={busy} aria-label={`Edit ${p.name}`}>Edit</Button>
+                          <Button variant="danger" size="sm" onClick={() => confirmDelete(p.id, p.name)} disabled={busy} aria-label={`Deactivate ${p.name}`}>Deactivate</Button>
+                        </>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -346,7 +370,9 @@ export function Products() {
                     <td className="num">{p.reorder_level ?? '—'}</td>
                     <td><span className="badge badge--warning">Inactive</span></td>
                     <td className="actions" style={{ display: 'flex', gap: 'var(--inline-gap)' }}>
-                      <Button variant="ghost" size="sm" onClick={() => startEdit(p)} disabled={busy} aria-label={`Edit ${p.name}`}>Edit</Button>
+                      {canManage && (
+                        <Button variant="ghost" size="sm" onClick={() => startEdit(p)} disabled={busy} aria-label={`Edit ${p.name}`}>Edit</Button>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -365,7 +391,7 @@ export function Products() {
       </div>
 
       {/* Product Form Dialog */}
-      {showForm && (
+      {canManage && showForm && (
         <Dialog
           isOpen={true}
           onClose={resetForm}
@@ -423,8 +449,8 @@ export function Products() {
                   />
                   <Checkbox
                     label="Active"
-                    checked={form.is_active === 'true'}
-                    onChange={e => setForm({ ...form, is_active: e.target.checked.toString() })}
+                    checked={form.active === 'true'}
+                    onChange={e => setForm({ ...form, active: e.target.checked ? 'true' : 'false' })}
                     description="Product will be visible in active lists"
                   />
                 </div>

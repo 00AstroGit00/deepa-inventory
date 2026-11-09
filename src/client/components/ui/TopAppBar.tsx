@@ -1,7 +1,6 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useSearch } from '../../hooks/useSearch';
-import { SearchIcon, BarcodeIcon, UserIcon } from '../icons';
 
 export interface TopAppBarProps {
   title: string;
@@ -14,6 +13,8 @@ export interface TopAppBarProps {
   onBack?: () => void;
   showBarcodeScanner?: boolean;
   onBarcodeScan?: (barcode: string) => void;
+  userRole?: string | null;
+  onLogout?: () => void;
 }
 
 export function TopAppBar({

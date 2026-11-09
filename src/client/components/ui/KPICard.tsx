@@ -4,7 +4,7 @@ export interface KPICardProps {
   icon?: React.ReactNode;
   trend?: {
     value: string;
-    type: 'positive' | 'negative' | 'neutral';
+    type: 'positive' | 'negative' | 'neutral' | 'warning';
   };
   variant?: 'default' | 'danger' | 'success' | 'warning' | 'info';
   className?: string;
@@ -30,6 +30,7 @@ export function KPICard({
     positive: 'kpi-card__change--positive',
     negative: 'kpi-card__change--negative',
     neutral: 'kpi-card__change--neutral',
+    warning: 'kpi-card__change--warning',
   };
 
   const iconColors = {

@@ -1,8 +1,7 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import 'dotenv/config';
-import pg from 'pg';
-
+import * as pg from 'pg';
 const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
 
 async function main() {

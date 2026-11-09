@@ -8,6 +8,7 @@ export interface DialogProps {
   children: React.ReactNode;
   footer?: React.ReactNode;
   size?: 'sm' | 'md' | 'lg' | 'xl' | 'full';
+  variant?: 'default' | 'danger' | 'success' | 'warning' | 'info';
   closeOnOverlayClick?: boolean;
   closeOnEscape?: boolean;
   showCloseButton?: boolean;
@@ -21,6 +22,7 @@ export function Dialog({
   children,
   footer,
   size = 'md',
+  variant = 'default',
   closeOnOverlayClick = true,
   closeOnEscape = true,
   showCloseButton = true,
@@ -91,6 +93,14 @@ export function Dialog({
     <div className="dialog-backdrop" onClick={closeOnOverlayClick ? onClose : undefined} aria-hidden="true" />
   );
 
+  const variantBorderColors = {
+    default: 'var(--border-default)',
+    danger: 'var(--danger-main)',
+    success: 'var(--success-main)',
+    warning: 'var(--warning-main)',
+    info: 'var(--info-main)',
+  };
+
   const dialog = (
     <div
       ref={dialogRef}
@@ -98,7 +108,7 @@ export function Dialog({
       role="dialog"
       aria-modal="true"
       aria-labelledby="dialog-title"
-      style={{ ...sizeStyles[size] }}
+      style={{ ...sizeStyles[size], borderColor: variantBorderColors[variant] }}
       tabIndex={-1}
       onClick={(e) => e.stopPropagation()}
     >

@@ -1,0 +1,32 @@
+{
+  "items": [
+    {
+      "id": "prod-001",
+      "name": "Whiskey Bottle",
+      "sku": "WB-001",
+      "category": "spirits",
+      "unit": "bottle",
+      "stock": 150
+    },
+    {
+      "id": "prod-002", 
+      "name": "Vodka",
+      "sku": "VD-002",
+      "category": "spirits",
+      "unit": "bottle",
+      "stock": 200
+    },
+    {
+      "id": "prod-003",
+      "name": "Beer",
+      "sku": "BE-003",
+      "category": "beer",
+      "unit": "case",
+      "stock": 12
+    }
+  ],
+  "metadata": {
+    "created": "2026-11-09",
+    "description": "Example product catalog for deepa-inventory"
+  }
+}

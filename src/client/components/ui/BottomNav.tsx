@@ -6,10 +6,14 @@ export interface BottomNavItem {
   icon: React.ReactNode | ((props: { className?: string }) => React.ReactNode);
   badge?: number;
   badgeColor?: 'danger' | 'warning';
+  adminOnly?: boolean;
+  userRole?: string | null;
 }
 
 export interface BottomNavProps {
   items: BottomNavItem[];
+  userRole?: string | null;
+  className?: string;
 }
 
 const NAV_ITEMS: BottomNavItem[] = [
@@ -20,7 +24,7 @@ const NAV_ITEMS: BottomNavItem[] = [
   { path: '/more', label: 'More', icon: MoreIcon },
 ];
 
-function HomeIcon({ className = '' }: { className?: string }) {
+export function HomeIcon({ className = '' }: { className?: string }) {
   return (
     <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
@@ -29,7 +33,7 @@ function HomeIcon({ className = '' }: { className?: string }) {
   );
 }
 
-function InventoryIcon({ className = '' }: { className?: string }) {
+export function InventoryIcon({ className = '' }: { className?: string }) {
   return (
     <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
@@ -39,7 +43,7 @@ function InventoryIcon({ className = '' }: { className?: string }) {
   );
 }
 
-function ReconcileIcon({ className = '' }: { className?: string }) {
+export function ReconcileIcon({ className = '' }: { className?: string }) {
   return (
     <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z" />
@@ -48,7 +52,7 @@ function ReconcileIcon({ className = '' }: { className?: string }) {
   );
 }
 
-function ProductsIcon({ className = '' }: { className?: string }) {
+export function ProductsIcon({ className = '' }: { className?: string }) {
   return (
     <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <path d="M20 7l-8-4-8 4" />
@@ -58,7 +62,7 @@ function ProductsIcon({ className = '' }: { className?: string }) {
   );
 }
 
-function ReportsIcon({ className = '' }: { className?: string }) {
+export function ReportsIcon({ className = '' }: { className?: string }) {
   return (
     <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
@@ -70,9 +74,20 @@ function ReportsIcon({ className = '' }: { className?: string }) {
   );
 }
 
+export function MoreIcon({ className = '' }: { className?: string }) {
+  return (
+    <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <circle cx="12" cy="12" r="1" />
+      <circle cx="19" cy="12" r="1" />
+      <circle cx="5" cy="12" r="1" />
+    </svg>
+  );
+}
+
 /* Enhanced BottomNav with inventory-specific variants */
 interface InventoryBottomNavProps extends BottomNavProps {
   inventoryVariant?: 'shortage' | 'excess' | 'recorded-loss' | 'unexplained';
+  className?: string;
 }
 
 export function InventoryBottomNav({ items = NAV_ITEMS, className = '', inventoryVariant }: InventoryBottomNavProps) {
@@ -107,11 +122,11 @@ export function InventoryBottomNav({ items = NAV_ITEMS, className = '', inventor
   );
 }
 
-export function BottomNav({ items = NAV_ITEMS, className = '' }: BottomNavProps) {
+export function BottomNav({ items = NAV_ITEMS, className = '', userRole }: BottomNavProps & { userRole?: string | null }) {
   const location = useLocation();
 
   const filteredItems = items.filter(item => {
-    if (item.adminOnly && item.userRole !== 'admin') return false;
+    if (item.adminOnly && userRole !== 'admin') return false;
     return true;
   });
 
@@ -148,13 +163,13 @@ export function BottomNav({ items = NAV_ITEMS, className = '' }: BottomNavProps)
   );
 }
 
-export function useBottomNavItems(): BottomNavItem[] {
+export function useBottomNavItems(userRole?: string | null): BottomNavItem[] {
   return [
     { path: '/', label: 'Home', icon: HomeIcon },
     { path: '/inventory', label: 'Inventory', icon: InventoryIcon },
     { path: '/reconciliation', label: 'Stocktake', icon: ReconcileIcon },
     { path: '/reports', label: 'Reports', icon: ReportsIcon },
-    { path: '/more', label: 'More', icon: MoreIcon },
+    { path: '/more', label: 'More', icon: MoreIcon, adminOnly: false, userRole },
   ];
 }
 

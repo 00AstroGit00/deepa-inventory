@@ -61,8 +61,8 @@ export interface ReconciliationData {
   transferOut: number;
   adjustments: number;
   expectedClosing: number;
-  physicalCount: number | null;
-  variance: number | null;
+  physicalCount: number | undefined;
+  variance: number | undefined;
   unitCost?: number;
   costUnit?: string;
 }
@@ -82,7 +82,7 @@ export interface MovementRecord {
   type: MovementType;
   amount: number;
   unit: string;
-  reason: string | null;
+  reason: string | undefined;
   createdBy: string;
   createdAt: string;
 }
@@ -91,7 +91,7 @@ export interface RecordedLoss {
   type: 'spillage' | 'adjustment';
   amount: number;
   unit: string;
-  reason: string | null;
+  reason: string | undefined;
   createdBy: string;
   createdAt: string;
 }
@@ -114,7 +114,7 @@ export interface ExceptionDetail {
   state: string;
   openingQty: number;
   expectedClosingQty: number;
-  physicalQty: number | null;
+  physicalQty: number | undefined;
   varianceQty: number | null;
   unit: string;
   unitCost?: number;
@@ -122,7 +122,7 @@ export interface ExceptionDetail {
   estimatedFinancialImpact?: number;
   expectedClosingMovements: Record<string, number>;
   recordedLosses: RecordedLoss[];
-  physicalCountRecord: PhysicalCountRecord | null;
+  physicalCountRecord: PhysicalCountRecord | undefined;
   recurrenceCount: number;
   firstDetectedDate: Date;
   lastDetectedDate: Date;
@@ -181,14 +181,13 @@ export interface PaginatedExceptions {
  */
 export function classifyReconciliation(
   data: ReconciliationData,
-  movements: Array<{ type: MovementType; amount: number; unit: string; reason: string | null; createdBy: string; createdAt: string }>,
-  recordedLosses: Array<{ type: 'spillage' | 'adjustment'; amount: number; unit: string; reason: string | null }>,
-  physicalRecord: { amount: number; unit: string } | null,
+  movements: Array<{ type: MovementType; amount: number; unit: string; reason: string | undefined; createdBy: string; createdAt: string }>,
+  recordedLosses: Array<{ type: 'spillage' | 'adjustment'; amount: number; unit: string; reason: string | undefined }>,
+  physicalRecord: { amount: number; unit: string } | undefined,
   recurrenceCount: number = 1,
   firstDetected?: Date,
   lastDetected?: Date
 ): ExceptionClassificationResult {
-  // Helper to apply severity rules
   const applySeverity = (result: ExceptionClassificationResult): ExceptionClassificationResult => {
     const { severity: finalSeverity, reasons } = applySeverityRules(
       result.classification,
@@ -203,8 +202,10 @@ export function classifyReconciliation(
     return { ...result, severity: finalSeverity, reasoning: [...result.reasoning, ...reasons] };
   };
   
-  // Handle null physical count
-  if (data.physicalCount === null || data.variance === null) {
+  const varianceValue = data.variance !== undefined && data.variance !== null ? data.variance : 0;
+  const physicalCount = data.physicalCount !== undefined ? data.physicalCount : undefined;
+  
+  if (physicalCount === undefined) {
     return applySeverity({
       classification: 'incomplete_reconciliation',
       severity: 'medium',
@@ -216,8 +217,7 @@ export function classifyReconciliation(
     });
   }
   
-  // Check for invalid data first
-  if (data.physicalCount !== null && data.physicalCount < 0) {
+  if (physicalCount < 0) {
     return applySeverity({
       classification: 'invalid_data',
       severity: 'high',
@@ -229,38 +229,37 @@ export function classifyReconciliation(
     });
   }
   
-  // Check for recorded losses that explain the variance
-  const recordedLossTotal = recordedLosses.reduce((sum, loss) => sum + loss.amount, 0);
   const totalSpillage = recordedLosses
     .filter(l => l.type === 'spillage')
     .reduce((sum, loss) => sum + loss.amount, 0);
   
-  if (data.variance !== null && data.variance < 0) {
-    // Shortage detected
-    if (totalSpillage > 0 && totalSpillage >= Math.abs(data.variance!)) {
+  // Negative variance = shortage (physical count < expected closing)
+  if (varianceValue < 0) {
+    const absVariance = Math.abs(varianceValue);
+    
+    if (totalSpillage > 0 && totalSpillage >= absVariance) {
       return applySeverity({
         classification: 'recorded_loss',
         severity: 'low',
         reasoning: [
-          `Recorded spillage (${totalSpillage} ${data.unit}) explains the shortage (${Math.abs(data.variance!)} ${data.unit})`,
+          `Recorded spillage (${totalSpillage} ${data.unit}) explains the shortage (${absVariance} ${data.unit})`,
         ],
-        financialImpact: calculateFinancialImpact(data.variance!, data),
+        financialImpact: calculateFinancialImpact(varianceValue, data),
         isRecurring: false,
         recurrenceCount: recurrenceCount,
         firstDetected: new Date(),
         lastDetected: new Date(),
       });
     }
-  
-    // Check if spillage partially explains
-    if (totalSpillage > 0 && totalSpillage < Math.abs(data.variance!)) {
-      const unexplained = Math.abs(data.variance!) - totalSpillage;
+    
+    if (totalSpillage > 0 && totalSpillage < absVariance) {
+      const unexplained = absVariance - totalSpillage;
       return applySeverity({
         classification: 'unexplained_discrepancy',
         severity: determineSeverityByMagnitude(unexplained, data.expectedClosing, data),
         reasoning: [
           `Recorded spillage (${totalSpillage} ${data.unit}) partially explains shortage`,
-          `Unexplained shortage: ${Math.abs(data.variance!) - totalSpillage} ${data.unit}`,
+          `Unexplained shortage: ${unexplained} ${data.unit}`,
         ],
         financialImpact: calculateFinancialImpact(unexplained * -1, data),
         isRecurring: false,
@@ -269,13 +268,12 @@ export function classifyReconciliation(
         lastDetected: new Date(),
       });
     }
-  
-    // Unexplained shortage
+    
     return applySeverity({
       classification: 'unexplained_discrepancy',
       severity: 'medium',
-      reasoning: [`Unexplained shortage of ${Math.abs(data.variance!)} ${data.unit}`],
-      financialImpact: calculateFinancialImpact(data.variance!, data),
+      reasoning: [`Unexplained shortage of ${absVariance} ${data.unit}`],
+      financialImpact: calculateFinancialImpact(varianceValue, data),
       isRecurring: false,
       recurrenceCount: recurrenceCount,
       firstDetected: new Date(),
@@ -283,45 +281,45 @@ export function classifyReconciliation(
     });
   }
   
-  if (data.variance !== null && data.variance > 0) {
-    // Excess detected
-    // Check for potential duplicate receipt
-    if (data.receipts > 0 && data.receipts >= data.variance!) {
+  // Positive variance = excess (physical count > expected closing)
+  if (varianceValue > 0) {
+    const absVariance = varianceValue;
+    
+    if (data.receipts > 0 && data.receipts >= absVariance) {
       return applySeverity({
         classification: 'potential_duplicate_movement',
         severity: 'high',
         reasoning: [
-          `Excess (${data.variance!} ${data.unit}) could indicate duplicate receipt (${data.receipts} ${data.unit} received)`,
+          `Excess (${absVariance} ${data.unit}) could indicate duplicate receipt (${data.receipts} ${data.unit} received)`,
         ],
-        financialImpact: calculateFinancialImpact(data.variance!, data),
+        financialImpact: calculateFinancialImpact(varianceValue, data),
         isRecurring: false,
         recurrenceCount: recurrenceCount,
         firstDetected: new Date(),
         lastDetected: new Date(),
       });
     }
-
-    // Check for potential duplicate transfer_in
-    if (data.transferIn > 0 && data.transferIn >= data.variance!) {
+    
+    if (data.transferIn > 0 && data.transferIn >= absVariance) {
       return applySeverity({
         classification: 'potential_duplicate_movement',
         severity: 'high',
         reasoning: [
-          `Excess (${data.variance!} ${data.unit}) could indicate duplicate transfer in (${data.transferIn} ${data.unit} received)`,
+          `Excess (${absVariance} ${data.unit}) could indicate duplicate transfer in (${data.transferIn} ${data.unit} received)`,
         ],
-        financialImpact: calculateFinancialImpact(data.variance!, data),
+        financialImpact: calculateFinancialImpact(varianceValue, data),
         isRecurring: false,
         recurrenceCount: recurrenceCount,
         firstDetected: new Date(),
         lastDetected: new Date(),
       });
     }
-  
+    
     return applySeverity({
       classification: 'stock_excess',
       severity: 'medium',
-      reasoning: [`Unexplained excess of ${data.variance!} ${data.unit}`],
-      financialImpact: calculateFinancialImpact(data.variance!, data),
+      reasoning: [`Unexplained excess of ${absVariance} ${data.unit}`],
+      financialImpact: calculateFinancialImpact(varianceValue, data),
       isRecurring: false,
       recurrenceCount: recurrenceCount,
       firstDetected: new Date(),
@@ -340,9 +338,7 @@ export function classifyReconciliation(
     firstDetected: new Date(),
     lastDetected: new Date(),
   });
-}
-
-export function determineSeverityByMagnitude(
+}export function determineSeverityByMagnitude(
   variance: number,
   expectedClosing: number,
   data: ReconciliationData
@@ -562,7 +558,7 @@ export function calculateVarianceValue(
   variance: number,
   costBasis: CostBasis
 ): number | undefined {
-  if (variance === 0 || variance === null || variance === undefined) return 0;
+  if (variance === 0 || variance === undefined || variance === undefined) return 0;
   if (!costBasis || !costBasis.unitCost) return undefined;
 
   let costPerMl: number;
@@ -644,7 +640,7 @@ export function filterExceptions(
     }
     
     if (filter.hasFinancialImpact !== undefined) {
-      const hasImpact = ex.estimatedFinancialImpact !== undefined && ex.estimatedFinancialImpact !== null && ex.estimatedFinancialImpact !== 0;
+      const hasImpact = ex.estimatedFinancialImpact !== undefined && ex.estimatedFinancialImpact !== undefined && ex.estimatedFinancialImpact !== 0;
       if (filter.hasFinancialImpact !== hasImpact) return false;
     }
     
@@ -745,8 +741,12 @@ export function detectRecurrencePatterns(
       a.lastDetectedDate.getTime() - b.lastDetectedDate.getTime()
     );
 
-    const firstDetected = sorted[0].firstDetectedDate;
-    const lastDetected = sorted[sorted.length - 1].lastDetectedDate;
+    const firstException = sorted[0];
+    const lastException = sorted[sorted.length - 1];
+    if (!firstException || !lastException) continue;
+
+    const firstDetected = firstException.firstDetectedDate;
+    const lastDetected = lastException.lastDetectedDate;
     const daysBetween = Math.floor(
       (lastDetected.getTime() - firstDetected.getTime()) / (1000 * 60 * 60 * 24)
     );
@@ -755,13 +755,13 @@ export function detectRecurrencePatterns(
     // Check if escalating (variance magnitude increasing)
     const variances = sorted.map(e => Math.abs(e.varianceQty ?? 0));
     const isEscalating = variances.length >= 3 && 
-      variances[variances.length - 1] > variances[0] &&
-      variances[variances.length - 1] > variances[Math.floor(variances.length / 2)];
+      (variances[variances.length - 1] ?? 0) > (variances[0] ?? 0) &&
+      (variances[variances.length - 1] ?? 0) > (variances[Math.floor(variances.length / 2)] ?? 0);
 
     patterns.push({
-      productId: sorted[0].productId,
-      productName: sorted[0].productName,
-      classification: sorted[0].classification,
+      productId: firstException.productId,
+      productName: firstException.productName,
+      classification: firstException.classification,
       count: sorted.length,
       firstDetected,
       lastDetected,
@@ -820,10 +820,10 @@ export function getFinancialImpactSummary(exceptions: ExceptionDetail[]): {
   countWithoutCostData: number;
 } {
   const withCost = exceptions.filter(e => 
-    e.estimatedFinancialImpact !== undefined && e.estimatedFinancialImpact !== null
+    e.estimatedFinancialImpact !== undefined && e.estimatedFinancialImpact !== undefined
   );
   const withoutCost = exceptions.filter(e => 
-    e.estimatedFinancialImpact === undefined || e.estimatedFinancialImpact === null
+    e.estimatedFinancialImpact === undefined || e.estimatedFinancialImpact === undefined
   );
 
   const byClassification: Record<string, number> = {};

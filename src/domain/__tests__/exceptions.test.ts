@@ -45,13 +45,13 @@ describe('Exception Classification Engine', () => {
   });
 
   const mockMovements = [
-    { type: 'opening' as const, amount: 10000, unit: 'ml', reason: null, createdBy: 'u1', createdAt: '2024-01-01' },
-    { type: 'receipt' as const, amount: 500, unit: 'ml', reason: null, createdBy: 'u1', createdAt: '2024-01-01' },
-    { type: 'consumption' as const, amount: 300, unit: 'ml', reason: null, createdBy: 'u1', createdAt: '2024-01-01' },
+    { type: 'opening' as const, amount: 10000, unit: 'ml', reason: undefined, createdBy: 'u1', createdAt: '2024-01-01' },
+    { type: 'receipt' as const, amount: 500, unit: 'ml', reason: undefined, createdBy: 'u1', createdAt: '2024-01-01' },
+    { type: 'consumption' as const, amount: 300, unit: 'ml', reason: undefined, createdBy: 'u1', createdAt: '2024-01-01' },
   ];
 
   const mockRecordedLosses = [
-    { type: 'spillage' as const, amount: 0, unit: 'ml', reason: null, createdBy: 'u1', createdAt: '2024-01-01' },
+    { type: 'spillage' as const, amount: 0, unit: 'ml', reason: undefined, createdBy: 'u1', createdAt: '2024-01-01' },
   ];
 
   const mockPhysicalRecord = { amount: 10000, unit: 'ml' };
@@ -101,9 +101,9 @@ describe('Exception Classification Engine', () => {
       expect(result.severity).toBe('medium');
     });
 
-    it('classifies incomplete_reconciliation when physical count is null', () => {
-      const data = createMockData({ physicalCount: null, variance: null });
-      const result = classifyReconciliation(data, mockMovements, [], null, 1);
+    it('classifies incomplete_reconciliation when physical count is undefined', () => {
+      const data = createMockData({ physicalCount: undefined, variance: undefined });
+      const result = classifyReconciliation(data, mockMovements, [], undefined, 1);
       expect(result.classification).toBe('incomplete_reconciliation');
       expect(result.severity).toBe('medium');
     });
@@ -370,7 +370,7 @@ describe('Exception Classification Engine', () => {
     it('filters by classification', () => {
       const result = filterExceptions(mockExceptions, { classification: 'unexplained_discrepancy' });
       expect(result).toHaveLength(1);
-      expect(result[0].id).toBe('1');
+      expect(result[0]!.id).toBe('1');
     });
 
     it('filters by severity', () => {
@@ -395,14 +395,14 @@ describe('Exception Classification Engine', () => {
 
       const pos = filterExceptions(mockExceptions, { varianceDirection: 'positive' });
       expect(pos).toHaveLength(1);
-      expect(pos[0].id).toBe('3');
+      expect(pos[0]!.id).toBe('3');
     });
 
     it('filters by financial impact', () => {
       const withImpact = filterExceptions(mockExceptions, { hasFinancialImpact: true });
       expect(withImpact).toHaveLength(3);
 
-      const withoutImpact = filterExceptions([...mockExceptions, { id: '4', classification: 'reconciled', severity: 'informational', state: 'open', category: 'water', productId: 'p4', varianceQty: 0, estimatedFinancialImpact: null } as any], { hasFinancialImpact: false });
+      const withoutImpact = filterExceptions([...mockExceptions, { id: '4', classification: 'reconciled', severity: 'informational', state: 'open', category: 'water', productId: 'p4', varianceQty: 0, estimatedFinancialImpact: undefined } as any], { hasFinancialImpact: false });
       expect(withoutImpact).toHaveLength(1);
     });
   });
@@ -416,22 +416,22 @@ describe('Exception Classification Engine', () => {
 
     it('sorts by severity desc', () => {
       const result = sortExceptions(mockExceptions, 'severity', 'desc');
-      expect(result[0].id).toBe('2');
-      expect(result[1].id).toBe('3');
-      expect(result[2].id).toBe('1');
+      expect(result[0]!.id).toBe('2');
+      expect(result[1]!.id).toBe('3');
+      expect(result[2]!.id).toBe('1');
     });
 
     it('sorts by severity asc', () => {
       const result = sortExceptions(mockExceptions, 'severity', 'asc');
-      expect(result[0].id).toBe('1');
-      expect(result[1].id).toBe('3');
-      expect(result[2].id).toBe('2');
+      expect(result[0]!.id).toBe('1');
+      expect(result[1]!.id).toBe('3');
+      expect(result[2]!.id).toBe('2');
     });
 
     it('sorts by date desc', () => {
       const result = sortExceptions(mockExceptions, 'firstDetectedDate', 'desc');
-      expect(result[0].id).toBe('3');
-      expect(result[2].id).toBe('1');
+      expect(result[0]!.id).toBe('3');
+      expect(result[2]!.id).toBe('1');
     });
   });
 
@@ -463,9 +463,9 @@ describe('Exception Classification Engine', () => {
     it('detects recurrence patterns', () => {
       const patterns = detectRecurrencePatterns(mockExceptions, 3, 30);
       expect(patterns).toHaveLength(1);
-      expect(patterns[0].productId).toBe('p1');
-      expect(patterns[0].count).toBe(3);
-      expect(patterns[0].isEscalating).toBe(true);
+      expect(patterns[0]!.productId).toBe('p1');
+      expect(patterns[0]!.count).toBe(3);
+      expect(patterns[0]!.isEscalating).toBe(true);
     });
 
     it('respects minOccurrences', () => {
@@ -518,7 +518,7 @@ describe('Exception Classification Engine', () => {
       { classification: 'unexplained_discrepancy', severity: 'high', estimatedFinancialImpact: 5000 } as any,
       { classification: 'unexplained_discrepancy', severity: 'medium', estimatedFinancialImpact: 3000 } as any,
       { classification: 'recorded_loss', severity: 'low', estimatedFinancialImpact: 1000 } as any,
-      { classification: 'stock_excess', severity: 'medium', estimatedFinancialImpact: null } as any,
+      { classification: 'stock_excess', severity: 'medium', estimatedFinancialImpact: undefined } as any,
     ];
 
     it('calculates summary correctly', () => {

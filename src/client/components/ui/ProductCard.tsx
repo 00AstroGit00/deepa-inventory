@@ -227,7 +227,7 @@ export function ProductCard({
           ) : (
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 'var(--space-2)' }}>
               <span className="inventory-num" style={{
-                color: variance !== null && variance < 0 ? 'var(--inventory-shortage)' : 'var(--text-primary)'
+                color: (variance ?? 0) < 0 ? 'var(--inventory-shortage)' : 'var(--text-primary)'
               }}>
                 {formatNumber(physicalQuantity ?? stockQuantity)}
               </span>
@@ -236,17 +236,17 @@ export function ProductCard({
           )}
 
           {/* Variance indicator */}
-          {variance !== null && physicalQuantity !== null && (
+          {variance !== null && variance !== undefined && physicalQuantity !== null && (
             <span 
               className="product-card__variance"
               style={{ 
                 fontSize: 'var(--text-xs)',
                 fontWeight: 'var(--font-weight-medium)',
-                color: variance! > 0 ? 'var(--success-main)' : variance! < 0 ? 'var(--danger-main)' : 'var(--text-tertiary)',
+                color: variance > 0 ? 'var(--success-main)' : variance < 0 ? 'var(--danger-main)' : 'var(--text-tertiary)',
                 marginLeft: 'var(--inline-gap-sm)'
               }}
             >
-              {variance! > 0 ? '+' : ''}{formatNumber(variance!)} {stockUnit}
+              {variance > 0 ? '+' : ''}{formatNumber(variance)} {stockUnit}
             </span>
           )}
         </div>

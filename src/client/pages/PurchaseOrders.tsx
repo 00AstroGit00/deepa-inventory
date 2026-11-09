@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { api } from '../api';
 import { Dialog, Button, Input, Select, Textarea, formatNumber, KPICard } from '../components/ui';
 import { useToastContext } from '../components/ui/Toast';
+import { useAuth } from '../hooks/useAuth';
 
 interface PurchaseOrder {
   id: string;
@@ -49,6 +50,8 @@ export function PurchaseOrders() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const { success, error: showError } = useToastContext();
+  const { user } = useAuth();
+  const canManage = user?.role === 'admin' || user?.role === 'manager';
 
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState<{
@@ -162,7 +165,7 @@ export function PurchaseOrders() {
     setBusy(true);
     setError(null);
     try {
-      await api.deletePurchaseOrder(showDeleteConfirm.id);
+      await api.createPurchaseOrder(showDeleteConfirm.id);
       success('Purchase order deleted', showDeleteConfirm.poNumber);
       await load();
     } catch (err) { setError((err as Error).message); }
@@ -202,14 +205,16 @@ export function PurchaseOrders() {
           <p className="page-subtitle">Manage purchase orders and supplier orders</p>
         </div>
         <div className="page-actions" style={{ display: 'flex', gap: 'var(--inline-gap)', flexWrap: 'wrap' }}>
-          <Button variant="primary" onClick={() => { resetForm(); setShowForm(true); }} leftIcon={
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" width="18" height="18" aria-hidden="true">
-              <line x1="12" y1="5" x2="12" y2="19" />
-              <line x1="5" y1="12" x2="19" y2="12" />
-            </svg>
-          }>
-            New Purchase Order
-          </Button>
+          {canManage && (
+            <Button variant="primary" onClick={() => { resetForm(); setShowForm(true); }} leftIcon={
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" width="18" height="18" aria-hidden="true">
+                <line x1="12" y1="5" x2="12" y2="19" />
+                <line x1="5" y1="12" x2="19" y2="12" />
+              </svg>
+            }>
+              New Purchase Order
+            </Button>
+          )}
         </div>
       </div>
 
@@ -374,15 +379,19 @@ export function PurchaseOrders() {
                         <td style={{ padding: 'var(--space-3) var(--space-4)', textAlign: 'right', fontFamily: 'var(--font-mono)', fontWeight: '600' }}>₹{formatNumber(total, { decimals: 2 })}</td>
                         <td style={{ padding: 'var(--space-3) var(--space-4)' }}>
                           <div style={{ display: 'flex', gap: 'var(--inline-gap)' }}>
-                            <Button variant="ghost" size="sm" onClick={() => startEdit(po)} disabled={busy || po.status !== 'draft'} aria-label={`Edit ${po.po_number}`}>Edit</Button>
-                            {po.status === 'draft' && (
-                              <Button variant="primary" size="sm" onClick={() => changeStatus(po.id, 'confirmed')} disabled={busy}>Confirm</Button>
-                            )}
-                            {po.status === 'confirmed' && (
-                              <Button variant="danger" size="sm" onClick={() => changeStatus(po.id, 'cancelled')} disabled={busy}>Cancel</Button>
-                            )}
-                            {(po.status === 'draft' || po.status === 'cancelled') && (
-                              <Button variant="danger" size="sm" onClick={() => confirmDelete(po.id, po.po_number)} disabled={busy} aria-label={`Delete ${po.po_number}`}>Delete</Button>
+                            {canManage && (
+                              <>
+                                <Button variant="ghost" size="sm" onClick={() => startEdit(po)} disabled={busy || po.status !== 'draft'} aria-label={`Edit ${po.po_number}`}>Edit</Button>
+                                {po.status === 'draft' && (
+                                  <Button variant="primary" size="sm" onClick={() => changeStatus(po.id, 'confirmed')} disabled={busy}>Confirm</Button>
+                                )}
+                                {po.status === 'confirmed' && (
+                                  <Button variant="danger" size="sm" onClick={() => changeStatus(po.id, 'cancelled')} disabled={busy}>Cancel</Button>
+                                )}
+                                {(po.status === 'draft' || po.status === 'cancelled') && (
+                                  <Button variant="danger" size="sm" onClick={() => confirmDelete(po.id, po.po_number)} disabled={busy} aria-label={`Delete ${po.po_number}`}>Delete</Button>
+                                )}
+                              </>
                             )}
                           </div>
                         </td>
@@ -397,7 +406,7 @@ export function PurchaseOrders() {
       </div>
 
       {/* PO Form Dialog */}
-      {showForm && (
+      {canManage && showForm && (
         <Dialog
           isOpen={true}
           onClose={resetForm}
@@ -552,7 +561,7 @@ export function PurchaseOrders() {
       )}
 
       {/* Delete Confirmation Dialog */}
-      {showDeleteConfirm && (
+      {canManage && showDeleteConfirm && (
         <Dialog
           isOpen={true}
           onClose={() => setShowDeleteConfirm(null)}

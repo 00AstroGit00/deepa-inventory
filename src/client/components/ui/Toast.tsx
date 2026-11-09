@@ -101,7 +101,7 @@ function ToastItem({
         {toast.action && (
           <button
             className="toast__action"
-            onClick={() => { toast.action.onClick(); onDismiss(toast.id); }}
+            onClick={() => { toast.action!.onClick(); onDismiss(toast.id); }}
             style={{
               padding: 'var(--inline-gap-sm) var(--inline-gap)',
               border: '1px solid currentColor',

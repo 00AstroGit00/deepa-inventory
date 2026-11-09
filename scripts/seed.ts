@@ -1,7 +1,7 @@
 import 'dotenv/config';
-import bcrypt from 'bcryptjs';
-import pg from 'pg';
-
+import * as pg from 'pg';
+import bcryptjs from 'bcryptjs';
+const bcrypt = (bcryptjs as any).default || bcryptjs;
 const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
 
 async function main() {
@@ -30,7 +30,7 @@ async function main() {
         (name, brand, category, stock_unit, package_size_amount, package_size_unit,
          bottle_size_ml, tax_treatment, reorder_level)
        VALUES ($1,$2,$3,$4,$5,'ml',$6,$7,$8)
-       ON CONFLICT (name, brand, category, stock_unit) DO NOTHING`,
+       ON CONFLICT DO NOTHING`,
       [name, brand, category, unit, pkg, bottle, tax, reorder]);
   }
   console.log('Seed complete. Login:', email);

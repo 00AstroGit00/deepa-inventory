@@ -20,6 +20,12 @@ export interface Row {
   opening: number; receipts: number; consumption: number; spillage: number;
   transferIn: number; transferOut: number; adjustments: number;
   expectedClosing: number; physicalCount: number | null; variance: number | null;
+  category?: string | null;
+  brand?: string | null;
+  bottleSizeMl?: number | null;
+  reorderLevel?: number | null;
+  packageSizeAmount?: number | null;
+  packageSizeUnit?: string | null;
 }
 export interface DayResponse { date: string; status: string; rows: Row[]; }
 

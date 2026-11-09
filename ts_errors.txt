@@ -1,0 +1,44 @@
+src/client/pages/DailyInventory.tsx(232,21): error TS2353: Object literal may only specify known properties, and ''--chip-color'' does not exist in type 'Properties<string | number, string & {}>'.
+src/client/pages/DailyInventory.tsx(249,13): error TS2322: Type '{ id: string; name: string; brand: string | null | undefined; category: string; stockUnit: string; packageSizeAmount: number | null | undefined; packageSizeUnit: string | null | undefined; ... 7 more ...; onQuantityChange: (id: string, qty: number) => Promise<...>; }[]' is not assignable to type 'ProductCardProps[]'.
+src/client/pages/DailyInventory.tsx(259,55): error TS2345: Argument of type 'number | null | undefined' is not assignable to parameter of type 'number | null'.
+src/client/pages/Products.tsx(124,44): error TS2339: Property 'name' does not exist on type '{ brand: string | number | true | null; sku: string | number | true | null; barcode: string | number | true | null; package_size_amount: number | null; bottle_size_ml: number | null; reorder_level: number | null; is_active: boolean; }'.
+src/client/pages/Products.tsx(127,44): error TS2339: Property 'name' does not exist on type '{ brand: string | number | true | null; sku: string | number | true | null; barcode: string | number | true | null; package_size_amount: number | null; bottle_size_ml: number | null; reorder_level: number | null; is_active: boolean; }'.
+src/client/pages/Products.tsx(258,9): error TS2322: Type '{ id: string; name: string; brand: string | null; category: string; stockUnit: string; packageSizeAmount: number | null; packageSizeUnit: string | null; bottleSizeMl: number | null; stockQuantity: number; status: string; isLiquor: boolean; }[]' is not assignable to type 'ProductCardProps[]'.
+src/client/pages/Products.tsx(398,21): error TS2322: Type 'string | number | boolean | undefined' is not assignable to type 'string | number | readonly string[] | undefined'.
+src/client/pages/Products.tsx(404,21): error TS2322: Type 'string | number | boolean | undefined' is not assignable to type 'string | number | readonly string[] | undefined'.
+src/client/pages/Products.tsx(411,21): error TS2322: Type 'string | number | boolean | undefined' is not assignable to type 'string | number | readonly string[] | undefined'.
+src/client/pages/Products.tsx(419,21): error TS2322: Type 'string | number | boolean | undefined' is not assignable to type 'string | number | readonly string[] | undefined'.
+src/client/pages/Products.tsx(445,21): error TS2322: Type 'string | number | boolean | undefined' is not assignable to type 'string | number | readonly string[] | undefined'.
+src/client/pages/Products.tsx(451,21): error TS2322: Type 'string | number | boolean | undefined' is not assignable to type 'string | number | readonly string[] | undefined'.
+src/client/pages/Products.tsx(479,21): error TS2322: Type 'string | number | boolean | undefined' is not assignable to type 'string | number | readonly string[] | undefined'.
+src/client/pages/Products.tsx(485,21): error TS2322: Type 'string | number | boolean | undefined' is not assignable to type 'string | number | readonly string[] | undefined'.
+src/client/pages/Products.tsx(494,23): error TS2322: Type 'string | number | boolean | undefined' is not assignable to type 'string | number | readonly string[] | undefined'.
+src/client/pages/Products.tsx(506,21): error TS2322: Type 'string | number | boolean | undefined' is not assignable to type 'string | number | readonly string[] | undefined'.
+src/client/pages/Products.tsx(516,21): error TS2322: Type 'string | number | boolean | undefined' is not assignable to type 'string | number | readonly string[] | undefined'.
+src/client/pages/PurchaseOrders.tsx(165,17): error TS2551: Property 'deletePurchaseOrder' does not exist on type '{ me: () => Promise<{ id: string; email: string; role: string; }>; login: (email: string, password: string) => Promise<unknown>; logout: () => Promise<unknown>; changePassword: (currentPassword: string, newPassword: string) => Promise<...>; ... 35 more ...; stockHealthCsv: () => Promise<...>; }'. Did you mean 'createPurchaseOrder'?
+src/client/pages/Suppliers.tsx(74,45): error TS2339: Property 'name' does not exist on type '{ contact_info: string | null; address: string | null; phone: string | null; email: string | null; gstin: string | null; payment_terms: string | null; }'.
+src/client/pages/Suppliers.tsx(77,45): error TS2339: Property 'name' does not exist on type '{ contact_info: string | null; address: string | null; phone: string | null; email: string | null; gstin: string | null; payment_terms: string | null; }'.
+src/client/pages/Users.tsx(40,45): error TS2322: Type '"admin" | "manager" | "counter"' is not assignable to type '"counter"'.
+src/client/pages/Users.tsx(175,49): error TS2322: Type '"admin" | "manager" | "counter"' is not assignable to type '"counter"'.
+src/domain/__tests__/exceptions.test.ts(373,14): error TS2532: Object is possibly 'undefined'.
+src/domain/__tests__/exceptions.test.ts(398,14): error TS2532: Object is possibly 'undefined'.
+src/domain/__tests__/exceptions.test.ts(419,14): error TS2532: Object is possibly 'undefined'.
+src/domain/__tests__/exceptions.test.ts(420,14): error TS2532: Object is possibly 'undefined'.
+src/domain/__tests__/exceptions.test.ts(421,14): error TS2532: Object is possibly 'undefined'.
+src/domain/__tests__/exceptions.test.ts(426,14): error TS2532: Object is possibly 'undefined'.
+src/domain/__tests__/exceptions.test.ts(427,14): error TS2532: Object is possibly 'undefined'.
+src/domain/__tests__/exceptions.test.ts(428,14): error TS2532: Object is possibly 'undefined'.
+src/domain/__tests__/exceptions.test.ts(433,14): error TS2532: Object is possibly 'undefined'.
+src/domain/__tests__/exceptions.test.ts(434,14): error TS2532: Object is possibly 'undefined'.
+src/domain/__tests__/exceptions.test.ts(466,14): error TS2532: Object is possibly 'undefined'.
+src/domain/__tests__/exceptions.test.ts(467,14): error TS2532: Object is possibly 'undefined'.
+src/domain/__tests__/exceptions.test.ts(468,14): error TS2532: Object is possibly 'undefined'.
+src/domain/exceptions.ts(748,27): error TS2532: Object is possibly 'undefined'.
+src/domain/exceptions.ts(749,26): error TS2532: Object is possibly 'undefined'.
+src/domain/exceptions.ts(758,7): error TS2532: Object is possibly 'undefined'.
+src/domain/exceptions.ts(758,41): error TS2532: Object is possibly 'undefined'.
+src/domain/exceptions.ts(759,7): error TS2532: Object is possibly 'undefined'.
+src/domain/exceptions.ts(759,41): error TS2532: Object is possibly 'undefined'.
+src/domain/exceptions.ts(762,18): error TS2532: Object is possibly 'undefined'.
+src/domain/exceptions.ts(763,20): error TS2532: Object is possibly 'undefined'.
+src/domain/exceptions.ts(764,23): error TS2532: Object is possibly 'undefined'.

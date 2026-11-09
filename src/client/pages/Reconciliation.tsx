@@ -1,10 +1,13 @@
 import { useEffect, useState } from 'react';
 import { api, DayResponse } from '../api';
 import { formatNumber, KPICard, Button } from '../components/ui';
+import { useAuth } from '../hooks/useAuth';
 
 const today = () => new Date().toISOString().slice(0, 10);
 
 export function Reconciliation() {
+  const { user } = useAuth();
+  const canManage = user?.role === 'admin' || user?.role === 'manager';
   const [date, setDate] = useState(today());
   const [day, setDay] = useState<DayResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -31,18 +34,20 @@ export function Reconciliation() {
           <p className="page-subtitle">Review and resolve inventory variances for {date}</p>
         </div>
         <div className="page-actions" style={{ display: 'flex', gap: 'var(--inline-gap)', flexWrap: 'wrap' }}>
-          <a 
-            className="btn btn-secondary" 
-            href={`/api/reports/reconciliation.csv?date=${date}`}
-            download
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="18" height="18" aria-hidden="true">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-              <polyline points="7 10 12 15 17 10" />
-              <line x1="12" y1="15" x2="12" y2="3" />
-            </svg>
-            Export CSV
-          </a>
+          {canManage && (
+            <a 
+              className="btn btn-secondary" 
+              href={`/api/reports/reconciliation.csv?date=${date}`}
+              download
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="18" height="18" aria-hidden="true">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="7 10 12 15 17 10" />
+                <line x1="12" y1="15" x2="12" y2="3" />
+              </svg>
+              Export CSV
+            </a>
+          )}
         </div>
       </div>
 

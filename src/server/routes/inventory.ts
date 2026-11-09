@@ -57,7 +57,11 @@ inventoryRouter.get('/:date', async (req, res) => {
   res.json({ date, status: day?.status ?? 'not_started', rows: result });
 });
 
-inventoryRouter.post('/:date/counts', idempotency(), async (req, res) => {
+inventoryRouter.post(
+  '/:date/counts',
+  requireRole('admin', 'manager'),
+  idempotency(),
+  async (req, res) => {
   const body = CountSchema.parse(req.body);
   const date = req.params.date ?? '';
   await withTransaction(async (c) => {

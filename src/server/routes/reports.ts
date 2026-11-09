@@ -4,6 +4,7 @@ import { requireAuth } from '../auth';
 import { buildReconciliation, ReconciliationRow } from '../../domain/inventory';
 import { toCsv } from '../../domain/csvSafe';
 
+import { calculateTrends, generateForecast, detectLowStock } from '../../domain/inventory';
 export const reportsRouter = Router();
 reportsRouter.use(requireAuth);
 
@@ -60,6 +61,9 @@ reportsRouter.get('/reconciliation.csv', async (req, res) => {
 });
 
 reportsRouter.get('/dashboard', async (_req, res) => {
+  const trends = await calculateTrends();
+  const forecast = await generateForecast();
+  const lowStockAlerts = await detectLowStock();
   const [lowStock, openDays, negative, counts] = await Promise.all([
     pool.query(
       `SELECT p.id, p.name, p.stock_unit,
@@ -83,6 +87,9 @@ reportsRouter.get('/dashboard', async (_req, res) => {
     openInventoryDays: openDays.rows[0].n,
     unresolvedNegativeStock: negative.rows[0].n,
     countsLast24h: counts.rows[0].n,
+    trends,
+    forecast,
+    lowStockAlerts,
   });
 });
 

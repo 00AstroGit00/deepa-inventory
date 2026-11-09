@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { api } from '../api';
 import { Dialog, Button, Input, Textarea, formatNumber, KPICard } from '../components/ui';
 import { useToastContext } from '../components/ui/Toast';
+import { useAuth } from '../hooks/useAuth';
 
 const EMPTY = {
   name: '', contact_info: '', address: '', phone: '', email: '', gstin: '', payment_terms: '',
@@ -29,6 +30,8 @@ export function Suppliers() {
   const [showForm, setShowForm] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<{ id: string; name: string } | null>(null);
   const { success, error: showError } = useToastContext();
+  const { user } = useAuth();
+  const canManage = user?.role === 'admin' || user?.role === 'manager';
 
   const load = useCallback(() => api.suppliers(q).then(setList).catch(e => setError(e.message)), [q]);
   useEffect(() => { void load(); }, [load]);
@@ -71,10 +74,10 @@ export function Suppliers() {
       };
       if (editingId) {
         await api.updateSupplier(editingId, payload);
-        success('Supplier updated', payload.name);
+        success('Supplier updated', form.name);
       } else {
         await api.createSupplier(payload);
-        success('Supplier created', payload.name);
+        success('Supplier created', form.name);
       }
       resetForm();
       await load();
@@ -101,8 +104,8 @@ export function Suppliers() {
     }
   };
 
-  const activeSuppliers = list.filter(s => s.is_active);
-  const inactiveSuppliers = list.filter(s => !s.is_active);
+  const activeSuppliers = list.filter(s => s.is_active !== false);
+  const inactiveSuppliers = list.filter(s => s.is_active === false);
 
   return (
     <section style={{ padding: 'var(--space-4) var(--page-gutter)' }}>
@@ -117,14 +120,16 @@ export function Suppliers() {
           <p className="page-subtitle">Manage supplier relationships and contact information</p>
         </div>
         <div className="page-actions" style={{ display: 'flex', gap: 'var(--inline-gap)', flexWrap: 'wrap' }}>
-          <Button variant="primary" onClick={() => { resetForm(); setShowForm(true); }} leftIcon={
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" width="18" height="18" aria-hidden="true">
-              <line x1="12" y1="5" x2="12" y2="19" />
-              <line x1="5" y1="12" x2="19" y2="12" />
-            </svg>
-          }>
-            Add Supplier
-          </Button>
+          {canManage && (
+            <Button variant="primary" onClick={() => { resetForm(); setShowForm(true); }} leftIcon={
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" width="18" height="18" aria-hidden="true">
+                <line x1="12" y1="5" x2="12" y2="19" />
+                <line x1="5" y1="12" x2="19" y2="12" />
+              </svg>
+            }>
+              Add Supplier
+            </Button>
+          )}
         </div>
       </div>
 
@@ -219,12 +224,16 @@ export function Suppliers() {
                           <td style={{ padding: 'var(--space-3) var(--space-4)' }}>
                             <span className="badge badge--success">Active</span>
                           </td>
-                          <td style={{ padding: 'var(--space-3) var(--space-4)' }}>
-                            <div style={{ display: 'flex', gap: 'var(--inline-gap)' }}>
-                              <Button variant="ghost" size="sm" onClick={() => startEdit(s)} disabled={busy} aria-label={`Edit ${s.name}`}>Edit</Button>
-                              <Button variant="danger" size="sm" onClick={() => confirmDelete(s.id, s.name)} disabled={busy} aria-label={`Deactivate ${s.name}`}>Deactivate</Button>
-                            </div>
-                          </td>
+<td style={{ padding: 'var(--space-3) var(--space-4)' }}>
+                              <div style={{ display: 'flex', gap: 'var(--inline-gap)' }}>
+                                {canManage && (
+                                  <>
+                                    <Button variant="ghost" size="sm" onClick={() => startEdit(s)} disabled={busy} aria-label={`Edit ${s.name}`}>Edit</Button>
+                                    <Button variant="danger" size="sm" onClick={() => confirmDelete(s.id, s.name)} disabled={busy} aria-label={`Deactivate ${s.name}`}>Deactivate</Button>
+                                  </>
+                                )}
+                              </div>
+                            </td>
                         </tr>
                       ))}
                     </tbody>
@@ -281,9 +290,13 @@ export function Suppliers() {
                           <td style={{ padding: 'var(--space-3) var(--space-4)' }}>
                             <span className="badge badge--warning">Inactive</span>
                           </td>
-                          <td style={{ padding: 'var(--space-3) var(--space-4)' }}>
-                            <Button variant="ghost" size="sm" onClick={() => startEdit(s)} disabled={busy} aria-label={`Edit ${s.name}`}>Edit</Button>
-                          </td>
+<td style={{ padding: 'var(--space-3) var(--space-4)' }}>
+                              <div style={{ display: 'flex', gap: 'var(--inline-gap)' }}>
+                                {canManage && (
+                                  <Button variant="ghost" size="sm" onClick={() => startEdit(s)} disabled={busy} aria-label={`Edit ${s.name}`}>Edit</Button>
+                                )}
+                              </div>
+                            </td>
                         </tr>
                       ))}
                     </tbody>
@@ -296,7 +309,7 @@ export function Suppliers() {
       </div>
 
       {/* Supplier Form Dialog */}
-      {showForm && (
+      {canManage && showForm && (
         <Dialog
           isOpen={true}
           onClose={resetForm}
@@ -389,7 +402,7 @@ export function Suppliers() {
       )}
 
       {/* Delete Confirmation Dialog */}
-      {showDeleteConfirm && (
+      {canManage && showDeleteConfirm && (
         <Dialog
           isOpen={true}
           onClose={() => setShowDeleteConfirm(null)}
